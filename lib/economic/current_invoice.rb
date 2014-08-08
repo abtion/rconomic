@@ -50,7 +50,8 @@ module Economic
       :margin_as_percent,
       :heading,
       :text_line1,
-      :text_line2
+      :text_line2,
+      :other_reference
 
     defaults(
       :id => 0,
@@ -177,6 +178,7 @@ module Economic
         ["Heading", :heading],
         ['TextLine1', :text_line1],
         ['TextLine2', :text_line2],
+        ['OtherReference', :other_reference],
         ["NetAmount", :net_amount, nil, :required],
         ["VatAmount", :vat_amount, nil, :required],
         ["GrossAmount", :gross_amount, nil, :required],
