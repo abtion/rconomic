@@ -40,6 +40,7 @@ describe Economic::CurrentInvoice do
         subject.term_of_payment_handle = Economic::Entity::Handle.new(:id => 37)
         subject.currency_handle = Economic::Entity::Handle.new({:code => "BTC"})
         subject.layout_handle = Economic::Entity::Handle.new(:id => 314)
+        subject.other_reference = "foobar"
 
         mock_request(
           "CurrentInvoice_CreateFromData", {
@@ -57,6 +58,7 @@ describe Economic::CurrentInvoice do
               "DeliveryDate" => nil,
               "NetAmount" => 0,
               "VatAmount" => 0,
+              "OtherReference" => "foobar",
               "GrossAmount" => 0,
               "Margin" => 0,
               "MarginAsPercent" => 0
@@ -64,6 +66,7 @@ describe Economic::CurrentInvoice do
           },
           :success
         )
+
         subject.save
       end
 
@@ -193,6 +196,18 @@ describe Economic::CurrentInvoice do
       debtor.handle = handle
       subject.debtor = debtor
       expect(subject.debtor_handle).to eq(handle)
+    end
+  end
+
+  describe "#pdf" do
+    it "gets PDF data from API" do
+      mock_request('Current_Invoice_GetPdf', {'currentInvoiceHandle' => {'Id' => 512}}, :success)
+      subject.pdf
+    end
+
+    it "decodes the base64Binary encoded data" do
+      stub_request('Current_Invoice_GetPdf', nil, :success)
+      expect(subject.pdf).to eq('This is not really PDF data')
     end
   end
 end
