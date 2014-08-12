@@ -1,9 +1,11 @@
 require 'economic/proxies/entity_proxy'
 require 'economic/proxies/actions/find_by_date_interval'
+require 'economic/proxies/actions/find_by_other_reference'
 
 module Economic
   class CurrentInvoiceProxy < EntityProxy
     include FindByDateInterval
+    include FindByOtherReference
 
   private
 
