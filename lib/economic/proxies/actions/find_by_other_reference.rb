@@ -8,6 +8,12 @@ module Economic
       handles = [ response[handle_key] ].flatten.reject(&:blank?).collect do |handle|
         Entity::Handle.build(handle)
       end
+
+      get_data_array(handles).collect do |entity_hash|
+        entity = build(entity_hash)
+        entity.persisted = true
+        entity
+      end
     end
   end
 end
