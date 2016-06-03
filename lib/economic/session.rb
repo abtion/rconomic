@@ -1,4 +1,4 @@
-require 'forwardable'
+require "forwardable"
 
 module Economic
   # The Economic::Session contains details and behaviors for a current
@@ -8,36 +8,53 @@ module Economic
 
     def_delegators :endpoint, :logger=, :log_level=, :log=
 
-    attr_accessor :agreement_number, :user_name, :password
+    attr_accessor :agreement_number, :user_name, :password, :app_identifier
     attr_reader :authentication_token
 
-    def initialize(agreement_number = nil, user_name = nil, password = nil)
+    def initialize(agreement_number = nil, user_name = nil, password = nil, app_identifier = nil)
       self.agreement_number = agreement_number
       self.user_name = user_name
       self.password = password
+      self.app_identifier = app_identifier
       yield endpoint if block_given?
     end
 
+    # Connect/authenticate with an API token and app id
+    #
+    # Reference: http://techtalk.e-conomic.com/why-were-implementing-a-new-api-connection-model/
+    #
+    # ==== Attributes
+    #
+    # * +private_app_id+ - The App ID created in your developer agreement
+    # * +access_id+ - The Access ID or token for your App ID
+    #
     def connect_with_token(private_app_id, access_id)
       endpoint.call(
         :connect_with_token,
-        {
-          :token => access_id,
-          :appToken => private_app_id
-        }
+        :token => access_id,
+        :appToken => private_app_id
       ) do |response|
         store_authentication_token(response)
       end
     end
 
-    def connect_with_credentials(agreement_number, user_name, password)
+    # Connect/authenticate with credentials
+    #
+    # ==== Attributes
+    #
+    # * +agreement_number+ - your economic agreement number
+    # * +user_name+ - your username
+    # * +password+ - your passsword
+    # * +app_identifier+ - A string identifiying your application, as described in http://techtalk.e-conomic.com/e-conomic-soap-api-now-requires-you-to-specify-a-custom-x-economicappidentifier-header/
+    #
+    def connect_with_credentials(agreement_number, user_name, password, app_identifier = nil)
+      self.app_identifier = app_identifier if app_identifier
+
       endpoint.call(
         :connect,
-        {
-          :agreementNumber => agreement_number,
-          :userName => user_name,
-          :password => password
-        }
+        :agreementNumber => agreement_number,
+        :userName => user_name,
+        :password => password
       ) do |response|
         store_authentication_token(response)
       end
@@ -46,7 +63,7 @@ module Economic
     # Authenticates with E-conomic using credentials
     # Assumes ::new was called with credentials as arguments.
     def connect
-      connect_with_credentials(self.agreement_number, self.user_name, self.password)
+      connect_with_credentials(agreement_number, user_name, password, app_identifier)
     end
 
     # Provides access to the DebtorContacts
@@ -106,7 +123,11 @@ module Economic
 
     # Provides access to products
     def products
-        @products ||= ProductProxy.new(self)
+      @products ||= ProductProxy.new(self)
+    end
+
+    def company
+      @company ||= CompanyProxy.new(self)
     end
 
     # Requests an action from the API endpoint
@@ -121,7 +142,7 @@ module Economic
 
     # Returns the SOAP endpoint to connect to
     def endpoint
-      @endpoint ||= Economic::Endpoint.new
+      @endpoint ||= Economic::Endpoint.new(app_identifier)
     end
 
     private

@@ -1,8 +1,8 @@
-require 'economic/proxies/entity_proxy'
-require 'economic/proxies/actions/find_by_ci_number'
-require 'economic/proxies/actions/find_by_handle_with_number'
-require 'economic/proxies/actions/find_by_number'
-require 'economic/proxies/actions/find_by_telephone_and_fax_number'
+require "economic/proxies/entity_proxy"
+require "economic/proxies/actions/find_by_ci_number"
+require "economic/proxies/actions/find_by_handle_with_number"
+require "economic/proxies/actions/find_by_number"
+require "economic/proxies/actions/find_by_telephone_and_fax_number"
 
 module Economic
   class DebtorProxy < EntityProxy
@@ -17,64 +17,49 @@ module Economic
     end
 
     def get_debtor_contacts(debtor_handle)
-      response = request :get_debtor_contacts, {
-        'debtorHandle' => { 'Number' => debtor_handle.number }
-      }
-      if response.empty?
-        nil
-      else
-        entities = []
-        [response[:debtor_contact_handle]].flatten.each do |handle|
-          entity = Economic::DebtorContact.new(:session => session)
-          entity.partial = true
-          entity.persisted = true
-          entity.handle = handle
-          entity.number = handle[:number].to_i
-          entities << entity
-        end
-        entities
-      end
+      response = fetch_response(:get_debtor_contacts, debtor_handle)
+      build_entities_from_response(
+        Economic::DebtorContact,
+        response[:debtor_contact_handle]
+      )
     end
 
     def get_invoices(debtor_handle)
-      response = request :get_invoices, {
-        'debtorHandle' => { 'Number' => debtor_handle.number }
-      }
-      if response.empty?
-        nil
-      else
-        entities = []
-        [response[:invoice_handle]].flatten.each do |handle|
-          entity = Economic::Invoice.new(:session => session)
-          entity.partial = true
-          entity.persisted = true
-          entity.handle = handle
-          entity.number = handle[:number].to_i
-          entities << entity
-        end
-        entities
-      end
+      response = fetch_response(:get_invoices, debtor_handle)
+      build_entities_from_response(
+        Economic::Invoice,
+        response[:invoice_handle]
+      )
     end
 
     # Returns handle for orders for debtor.
     def get_orders(debtor_handle)
-      response = request :get_orders, {
-        'debtorHandle' => { 'Number' => debtor_handle.number }
-      }
-      if response.empty?
-        nil
-      else
-        entities = []
-        [response[:order_handle]].flatten.each do |handle|
-          entity = Economic::Order.new(:session => session)
-          entity.partial = true
-          entity.persisted = true
-          entity.handle = handle
-          entity.number = handle[:id].to_i
-          entities << entity
-        end
-        entities
+      response = fetch_response(:get_orders, debtor_handle)
+      build_entities_from_response(
+        Economic::Order,
+        response[:order_handle]
+      )
+    end
+
+    private
+
+    def build_entities_from_response(entity_class, handles)
+      return nil if handles.nil?
+      [handles].flatten.map do |handle|
+        entity = entity_class.new(:session => session)
+        entity.partial = true
+        entity.persisted = true
+        entity.handle = handle
+        entity.number = handle[:id].to_i
+        entity
       end
+    end
+
+    def fetch_response(operation, debtor_handle)
+      request(
+        operation,
+        "debtorHandle" => {"Number" => debtor_handle.number}
+      )
     end
   end
 end

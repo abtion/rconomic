@@ -56,19 +56,12 @@ module Economic
     defaults(
       :id => 0,
       :date => Time.now,
-      :term_of_payment_handle => nil,
-      :due_date => nil,
-      :currency_handle => nil,
-      :exchange_rate => 100, # Why am _I_ inputting this?
-      :is_vat_included => nil,
-      :layout_handle => nil,
-      :delivery_date => nil,
-      :heading => nil,
+      :exchange_rate => 100,
       :net_amount => 0,
       :vat_amount => 0,
       :gross_amount => 0,
       :margin => 0,
-      :margin_as_percent => 0 # Why do I have to input both Margin and MarginAsPercent? Shouldn't powerful Windows machines running ASP.NET be able to compute this?
+      :margin_as_percent => 0
     )
 
     def initialize(properties = {})
@@ -95,9 +88,7 @@ module Economic
     #
     # Returns the resulting Economic::Invoice object
     def book
-      response = request(:book, {
-        "currentInvoiceHandle" => handle.to_hash
-      })
+      response = request(:book, "currentInvoiceHandle" => handle.to_hash)
 
       # Find the created Invoice
       session.invoices.find(response[:number])
@@ -108,10 +99,11 @@ module Economic
     #
     # Returns the resulting Economic::Invoice object
     def book_with_number(number)
-      response = request(:book_with_number, {
+      response = request(
+        :book_with_number,
         "currentInvoiceHandle" => handle.to_hash,
         "number" => number
-      })
+      )
 
       # Find the created Invoice
       session.invoices.find(response[:number])
@@ -163,11 +155,13 @@ module Economic
     protected
 
     def fields
-      date_formatter = Proc.new { |date| date.respond_to?(:iso8601) ? date.iso8601 : nil }
-      to_hash = Proc.new { |handle| handle.to_hash }
+      date_formatter = proc { |date|
+        date.respond_to?(:iso8601) ? date.iso8601 : nil
+      }
+      to_hash = proc { |handle| handle.to_hash }
       [
         ["Id", :id, nil, :required],
-        ["DebtorHandle", :debtor, Proc.new { |d| d.handle.to_hash }],
+        ["DebtorHandle", :debtor, proc { |d| d.handle.to_hash }],
         ["DebtorName", :debtor_name, nil, :required],
         ["DebtorAddress", :debtor_address],
         ["DebtorPostalCode", :debtor_postal_code],

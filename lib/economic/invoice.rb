@@ -1,4 +1,4 @@
-require 'economic/entity'
+require "economic/entity"
 
 module Economic
   class Invoice < Entity
@@ -6,9 +6,9 @@ module Economic
       :net_amount,
       :vat_amount,
       :gross_amount,
+      :date,
       :due_date,
       :debtor_handle,
-      :debtor_name,
       :debtor_name,
       :debtor_address,
       :debtor_postal_code,
@@ -50,9 +50,18 @@ module Economic
     end
 
     def remainder
-      request(:get_remainder, {
-        "invoiceHandle" => handle.to_hash
-      })
+      @remainder ||= request(:get_remainder, "invoiceHandle" => handle.to_hash).to_f
+    end
+
+    def days_past_due
+      days = Date.today - due_date.to_date
+      days > 0 ? days : 0
+    end
+
+    # Returns true if the due date has expired, and there is a remainder
+    # left on the invoice
+    def past_due?
+      days_past_due > 0 && remainder > 0
     end
 
     # Returns the PDF version of Invoice as a String.
@@ -63,9 +72,7 @@ module Economic
     #     file << invoice.pdf
     #   end
     def pdf
-      response = request(:get_pdf, {
-                           "invoiceHandle" => handle.to_hash
-      })
+      response = request(:get_pdf, "invoiceHandle" => handle.to_hash)
 
       Base64.decode64(response)
     end

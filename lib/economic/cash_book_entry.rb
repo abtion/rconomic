@@ -1,4 +1,4 @@
-require 'economic/entity'
+require "economic/entity"
 
 module Economic
   # Represents a cash book in E-conomic.
@@ -37,33 +37,12 @@ module Economic
       :voucher_number
 
     defaults(
-      :account_handle => nil,
       :amount => 0,
       :amount_default_currency => 0,
-      :bank_payment_creditor_id => nil,
-      :bank_payment_creditor_invoice_id => nil,
-      :bank_payment_type_handle => nil,
-      :capitalise_handle => nil,
-      :cash_book_handle => nil,
-      :contra_account_handle => nil,
-      :contra_vat_account_handle => nil,
-      :cost_type_handle => nil,
-      :creditor_handle => nil,
-      :creditor_invoice_number => nil,
-      :currency_handle => nil,
       :date => Time.now,
-      :debtor_handle => nil,
-      :debtor_invoice_number => nil,
-      :department_handle => nil,
-      :distribution_key_handle => nil,
-      :due_date => nil,
-      :employee_handle => nil,
-      :end_date => nil,
-      :project_handle => nil,
       :start_date => Time.now,
       :text => "",
       :type => "",
-      :vat_account_handle => nil,
       :voucher_number => 0
     )
 
@@ -74,9 +53,9 @@ module Economic
     protected
 
     def fields
-      to_hash = Proc.new { |handle| handle.to_hash }
+      to_hash = proc { |handle| handle.to_hash }
       [
-        ["Handle", :handle, Proc.new { |v| v.to_hash }],
+        ["Handle", :handle, proc { |v| v.to_hash }],
         ["Id1", :id1],
         ["Id2", :id2],
         ["Type", :type],

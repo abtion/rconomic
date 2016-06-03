@@ -1,32 +1,43 @@
-require './spec/spec_helper'
+require "./spec/spec_helper"
 
 describe Economic::Session do
-  let(:credentials) { [123456, 'api', 'passw0rd'] }
+  let(:credentials) { [123_456, "api", "passw0rd"] }
   subject { Economic::Session.new }
 
   let(:endpoint) { subject.endpoint }
 
   describe "new" do
     describe "legacy connect" do
-      subject { Economic::Session.new *credentials }
+      subject { Economic::Session.new(*credentials) }
       it "should store authentication details" do
-        expect(subject.agreement_number).to eq(123456)
-        expect(subject.user_name).to eq('api')
-        expect(subject.password).to eq('passw0rd')
+        expect(subject.agreement_number).to eq(123_456)
+        expect(subject.user_name).to eq("api")
+        expect(subject.password).to eq("passw0rd")
+      end
+
+      it "can also store an app_id" do
+        session = Economic::Session.new(*credentials, "app_id")
+        expect(session.app_identifier).to eq("app_id")
       end
     end
 
     it "yields the endpoint if a block is given" do
       endpoint_mock = double("Endpoint")
-      Economic::Endpoint.stub(:new).and_return(endpoint_mock)
-      expect{|b|
-        Economic::Session.new(123456, 'api', 'passw0rd', &b)
+      allow(Economic::Endpoint).to receive(:new).and_return(endpoint_mock)
+      expect {|b|
+        Economic::Session.new(123_456, "api", "passw0rd", &b)
       }.to yield_with_args(endpoint_mock)
     end
   end
 
   describe "connect" do
-    let(:authentication_details) { {:agreementNumber => 123456, :userName => 'api', :password => 'passw0rd'} }
+    let(:authentication_details) {
+      {
+        :agreementNumber => 123_456,
+        :userName => "api",
+        :password => "passw0rd"
+      }
+    }
 
     it "can connect old-style" do
       mock_request(:connect, authentication_details, :success)
@@ -41,10 +52,10 @@ describe Economic::Session do
 
     it "stores the authentication token for later requests" do
       response = {
-        :headers => {'Set-Cookie' => 'cookie value from e-conomic'},
+        :headers => {"Set-Cookie" => "cookie value from e-conomic"},
         :body => fixture(:connect, :success)
       }
-      stub_request('Connect', authentication_details, response)
+      stub_request("Connect", authentication_details, response)
 
       subject.connect_with_credentials(*credentials)
 
@@ -54,12 +65,20 @@ describe Economic::Session do
     end
 
     it "updates the authentication token for new sessions" do
-      stub_request("Connect", nil, {:headers => {"Set-Cookie" => "authentication token"}})
+      stub_request(
+        "Connect",
+        nil,
+        :headers => {"Set-Cookie" => "authentication token"}
+      )
       subject.connect_with_credentials(*credentials)
 
-      stub_request('Connect', nil, {:headers => {"Set-Cookie" => "another token"}})
+      stub_request(
+        "Connect",
+        nil,
+        :headers => {"Set-Cookie" => "another token"}
+      )
       other_session = Economic::Session.new
-      other_session.connect_with_credentials(123456, 'api', 'passw0rd')
+      other_session.connect_with_credentials(123_456, "api", "passw0rd")
 
       expect(subject.authentication_token.collect { |cookie|
         cookie.name_and_value.split("=").last
@@ -77,7 +96,12 @@ describe Economic::Session do
 
   describe "connecting with access ID" do
     # As per http://www.e-conomic.com/developer/tutorials
-    let(:authentication_details) { {:appToken => 'the_private_app_id', :token => 'the_access_id_you_got_from_the_grant'} }
+    let(:authentication_details) {
+      {
+        :appToken => "the_private_app_id",
+        :token => "the_access_id_you_got_from_the_grant"
+      }
+    }
     let(:private_app_id) { authentication_details[:appToken] }
     let(:access_id) { authentication_details[:token] }
     subject { Economic::Session.new }
@@ -88,10 +112,10 @@ describe Economic::Session do
 
     it "stores the authentication token for later requests" do
       response = {
-        :headers => {'Set-Cookie' => 'cookie value from e-conomic'},
+        :headers => {"Set-Cookie" => "cookie value from e-conomic"},
         :body => fixture(:connect_with_token, :success)
       }
-      stub_request('ConnectWithToken', authentication_details, response)
+      stub_request("ConnectWithToken", authentication_details, response)
 
       subject.connect_with_token private_app_id, access_id
 
@@ -101,12 +125,20 @@ describe Economic::Session do
     end
 
     it "updates the authentication token for new sessions" do
-      stub_request("ConnectWithToken", nil, {:headers => {"Set-Cookie" => "authentication token"}})
+      stub_request(
+        "ConnectWithToken",
+        nil,
+        :headers => {"Set-Cookie" => "authentication token"}
+      )
       subject.connect_with_token private_app_id, access_id
 
-      stub_request('Connect', nil, {:headers => {"Set-Cookie" => "another token"}})
+      stub_request(
+        "Connect",
+        nil,
+        :headers => {"Set-Cookie" => "another token"}
+      )
       other_session = Economic::Session.new
-      other_session.connect_with_credentials(123456, 'api', 'passw0rd')
+      other_session.connect_with_credentials(123_456, "api", "passw0rd")
 
       expect(subject.authentication_token.collect { |cookie|
         cookie.name_and_value.split("=").last
@@ -117,7 +149,10 @@ describe Economic::Session do
     end
 
     it "doesn't use existing authentication details when connecting" do
-      expect(endpoint).to receive(:call).with(:connect_with_token, instance_of(Hash))
+      expect(endpoint).to receive(:call).with(
+        :connect_with_token,
+        instance_of(Hash)
+      )
       subject.connect_with_token private_app_id, access_id
     end
   end
@@ -146,7 +181,9 @@ describe Economic::Session do
 
   describe "current_invoices" do
     it "returns an CurrentInvoiceProxy" do
-      expect(subject.current_invoices).to be_instance_of(Economic::CurrentInvoiceProxy)
+      expect(subject.current_invoices).to be_instance_of(
+        Economic::CurrentInvoiceProxy
+      )
     end
 
     it "memoizes the proxy" do
@@ -186,12 +223,14 @@ describe Economic::Session do
 
     it "sends data if given" do
       mock_request(:current_invoice_get_all, {:bar => :baz}, :none)
-      subject.request(:current_invoice_get_all, {:bar => :baz})
+      subject.request(:current_invoice_get_all, :bar => :baz)
     end
 
     it "returns a hash with data" do
       stub_request(:current_invoice_get_all, nil, :single)
-      expect(subject.request(:current_invoice_get_all)).to eq({:current_invoice_handle => {:id => "1"}})
+      expect(subject.request(:current_invoice_get_all)).to eq(
+        :current_invoice_handle => {:id => "1"}
+      )
     end
 
     it "returns an empty hash if no data returned" do
@@ -204,22 +243,22 @@ describe Economic::Session do
     let(:endpoint) { double("Endpoint") }
 
     before :each do
-      Economic::Endpoint.stub(:new).and_return(endpoint)
+      allow(Economic::Endpoint).to receive(:new).and_return(endpoint)
     end
 
     it "sets the log_level option of the endpoint" do
-      endpoint.should_receive(:log_level=).with(:info)
+      expect(endpoint).to receive(:log_level=).with(:info)
       subject.log_level = :info
     end
 
     it "sets the log option of the endpoint" do
-      endpoint.should_receive(:log=).with(true)
+      expect(endpoint).to receive(:log=).with(true)
       subject.log = true
     end
 
     it "sets the logger option of the boolean" do
       logger = double("MyLogger")
-      endpoint.should_receive(:logger=).with(logger)
+      expect(endpoint).to receive(:logger=).with(logger)
       subject.logger = logger
     end
   end

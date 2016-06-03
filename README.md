@@ -5,14 +5,17 @@ Ruby wrapper for the [e-conomic](http://www.e-conomic.co.uk) SOAP API, that aims
 
 E-conomic is a web-based accounting system. For their marketing speak, see [http://www.e-conomic.co.uk/about/](http://www.e-conomic.co.uk/about/). More details about their API at [http://www.e-conomic.com/developer](http://www.e-conomic.com/developer).
 
-[![Build Status](https://secure.travis-ci.org/lokalebasen/rconomic.png?branch=master)](http://travis-ci.org/lokalebasen/rconomic) [![Coverage Status](https://coveralls.io/repos/lokalebasen/rconomic/badge.png?branch=master)](https://coveralls.io/r/lokalebasen/rconomic?branch=master) [![Code Climate](https://codeclimate.com/github/lokalebasen/rconomic.png)](https://codeclimate.com/github/lokalebasen/rconomic)
+[![Build Status](https://travis-ci.org/substancelab/rconomic.svg?branch=master)](https://travis-ci.org/substancelab/rconomic) [![Test Coverage](https://codeclimate.com/github/substancelab/rconomic/badges/coverage.svg)](https://codeclimate.com/github/substancelab/rconomic/coverage) [![Code Climate](https://codeclimate.com/github/substancelab/rconomic/badges/gpa.svg)](https://codeclimate.com/github/substancelab/rconomic)
 
 
 Usage example
 -------------
 
     economic = Economic::Session.new
-    economic.connect_with_credentials(123456, 'API', 'passw0rd')
+
+    # After 16 November 2015, you must supply an 'Application ID' with #connect_with_credentials
+    # As described here: http://techtalk.e-conomic.com/e-conomic-soap-api-now-requires-you-to-specify-a-custom-x-economicappidentifier-header/
+    economic.connect_with_credentials(123456, 'API', 'passw0rd', 'my awesome integration v1.0.0')
 
     # Or connect using a Private app ID and an access ID provided by the "Grant Access"
     # As described here: http://www.e-conomic.com/developer/tutorials
@@ -20,7 +23,7 @@ Usage example
     economic.connect_with_token 'the_private_app_id', 'the_access_id_you_got_from_the_grant'
 
     # Find a debtor:
-    debtor = economic.debtors.find(101)
+    debtor = economic.debtors.find(:id => 101)
 
     # Creating a debtor:
     debtor = economic.debtors.build
@@ -107,7 +110,9 @@ Not even remotely... For now, limited to a small subset of all the [available op
     -------------------+--------+------+--------+-------
     CashBook           | X      | X    | X      | X
     CashBookEntry      | X      | X    | X      | X
+    Company            | X      | X    | X      | X
     Creditor           | X      | X    | X      | X
+    CreditorEntry      | X      | X    |        |
     CreditorContact    | X      | X    | X      | X
     CreditorEntry      | X      | X    | X      | X
     CurrentInvoice     | X      | X    | X      | X

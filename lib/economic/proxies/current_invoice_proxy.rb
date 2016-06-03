@@ -7,7 +7,7 @@ module Economic
     include FindByDateInterval
     include FindByOtherReference
 
-  private
+    private
 
     # Initialize properties in invoice with values from owner
     def initialize_properties_with_values_from_owner(invoice)

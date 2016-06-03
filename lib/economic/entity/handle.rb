@@ -8,14 +8,14 @@ class Economic::Entity
 
     def self.id_properties
       {
-        :code => 'Code',
-        :id => 'Id',
-        :id1 => 'Id1',
-        :id2 => 'Id2',
-        :name => 'Name',
-        :number => 'Number',
-        :serial_number => 'SerialNumber',
-        :vat_code => 'VatCode'
+        :code => "Code",
+        :id => "Id",
+        :id1 => "Id1",
+        :id2 => "Id2",
+        :name => "Name",
+        :number => "Number",
+        :serial_number => "SerialNumber",
+        :vat_code => "VatCode"
       }
     end
 
@@ -23,7 +23,7 @@ class Economic::Entity
       id_properties.keys
     end
 
-    attr_accessor *supported_keys
+    attr_accessor(*supported_keys)
 
     # Returns true if Handle hasn't been initialized with any values yet. This
     # usually happens when the handle is constructed for an entity whose id
@@ -48,7 +48,7 @@ class Economic::Entity
       only_keys = [only_keys].flatten
       only_keys.each_with_object({}) do |key, hash|
         property = id_properties[key]
-        value = self.send(key)
+        value = send(key)
         next if value.blank?
         hash[property] = value
       end
@@ -59,44 +59,69 @@ class Economic::Entity
     end
 
     def ==(other)
-      return true if self.object_id == other.object_id
+      return true if object_id == other.object_id
       return false if other.nil?
       return false if empty? || (other.respond_to?(:empty?) && other.empty?)
       return false unless other.respond_to?(:id) && other.respond_to?(:number)
-      self.id == other.id && self.number == other.number && self.id1 == other.id1 && self.id2 == other.id2
+      id == other.id &&
+        number == other.number &&
+        id1 == other.id1 &&
+        id2 == other.id2 &&
+        name == other.name
     end
 
     private
+
+    def handleish?(object)
+      return false if object.nil?
+      return true if object.is_a?(self.class)
+      return true if object.is_a?(Hash)
+      false
+    end
 
     def id_properties
       self.class.id_properties
     end
 
+    def verify_all_keys_are_known(hash)
+      if hash.respond_to?(:keys)
+        unknown_keys = hash.keys - id_properties.keys - id_properties.values
+        raise(
+          ArgumentError,
+          "Unknown keys in handle: #{unknown_keys.inspect}"
+        ) unless unknown_keys.empty?
+      end
+    end
+
     # Raises exceptions if hash doesn't contain values we can use to construct a
     # new handle
     def verify_sanity_of_arguments!(hash)
-      return if hash.is_a?(self.class)
+      verify_usability_for_handle(hash)
+      verify_all_keys_are_known(hash)
+    end
 
-      if hash.nil? || (!hash.respond_to?(:to_i) && (!hash.respond_to?(:keys) && !hash.respond_to?(:values)))
-        raise ArgumentError.new("Expected Number, Hash or Economic::Entity::Handle - got #{hash.inspect}")
-      end
+    def verify_usability_for_handle(hash)
+      return if handleish?(hash)
 
-      if hash.respond_to?(:keys)
-        unknown_keys = hash.keys - id_properties.keys - id_properties.values
-        raise ArgumentError.new("Unknown keys in handle: #{unknown_keys.inspect}") unless unknown_keys.empty?
-      end
+      raise(
+        ArgumentError,
+        "Expected Hash or Economic::Entity::Handle - got #{hash.inspect}"
+      )
     end
 
     # Examples
     #
-    #   prepare_hash_argument(12) #=> {:id => 12}
-    #   prepare_hash_argument(:id => 12) #=> {:id => 12}
-    #   prepare_hash_argument('Id' => 12) #=> {:id => 12}
-    #   prepare_hash_argument('Id' => 12, 'Number' => 13) #=> {:id => 12, :number => 13}
+    #   prepare_hash_argument(:id => 12)
+    #   #=> {:id => 12}
+    #
+    #   prepare_hash_argument('Id' => 12)
+    #   #=> {:id => 12}
+    #
+    #   prepare_hash_argument('Id' => 12, 'Number' => 13)
+    #   #=> {:id => 12, :number => 13}
     def prepare_hash_argument(hash)
-      hash = {:id => hash.to_i} if hash.respond_to?(:to_i) unless hash.blank?
-      hash[:id] ||= hash['Id']
-      hash[:number] ||= hash['Number']
+      hash[:id] ||= hash["Id"]
+      hash[:number] ||= hash["Number"]
       hash
     end
   end

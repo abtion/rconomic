@@ -1,10 +1,16 @@
 # Specify which ruby versions you wish to run your tests on, each version will be used
 rvm:
-  - 1.9.3
   - 2.0.0
-  - jruby
+  - 2.1.8
+  - 2.2.4
+  - 2.3.0
+  - jruby-9.0.4.0
 
 # Specify the recipients for email notification
 notifications:
   recipients:
     - jakob@mentalized.net
+
+addons:
+  code_climate:
+    repo_token: 6746eb72f5d9759f7d83ea90e8f49e3f01480d3b8f6334eea9e7cd9991c41ea4

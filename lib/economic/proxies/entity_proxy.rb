@@ -1,16 +1,16 @@
-require 'forwardable'
+require "forwardable"
 
 module Economic
   class EntityProxy
     class << self
       # Returns the class this Proxy is a proxy for
       def entity_class
-        Economic.const_get(self.entity_class_name)
+        Economic.const_get(entity_class_name)
       end
 
       def entity_class_name
-        proxy_class_name = name.split('::').last
-        proxy_class_name.sub(/Proxy$/, '')
+        proxy_class_name = name.split("::").last
+        proxy_class_name.sub(/Proxy$/, "")
       end
     end
 
@@ -59,7 +59,7 @@ module Economic
       entity.update_properties(properties)
       entity.partial = false
 
-      self.append(entity)
+      append(entity)
       initialize_properties_with_values_from_owner(entity)
 
       entity
@@ -78,7 +78,11 @@ module Economic
     # Fetches Entity data from API and returns an Entity initialized with that
     # data added to Proxy
     def find(handle)
-      handle = Entity::Handle.new(handle)
+      handle = if handle.respond_to?(:to_i)
+        Entity::Handle.new(:id => handle)
+      else
+        Entity::Handle.new(handle)
+      end
       entity_hash = get_data(handle)
       entity = build(entity_hash)
       entity.persisted = true
@@ -88,9 +92,7 @@ module Economic
     # Gets data for Entity from the API. Returns Hash with the response data
     def get_data(handle)
       handle = Entity::Handle.new(handle)
-      entity_hash = request(:get_data, {
-        'entityHandle' => handle.to_hash
-      })
+      entity_hash = request(:get_data, "entityHandle" => handle.to_hash)
       entity_hash
     end
 
@@ -98,21 +100,19 @@ module Economic
     def append(item)
       items << item unless items.include?(item)
     end
-    alias :<< :append
+    alias << append
 
     protected
 
-    def items
-      @items
-    end
+    attr_reader :items
 
     # Fetches all data for the given handles. Returns Array with hashes of
     # entity data
     def get_data_array(handles)
       return [] unless handles && handles.any?
 
-      entity_class_name_for_soap_request = entity_class.name.split('::').last
-      response = request(:get_data_array, {'entityHandles' => {"#{entity_class_name_for_soap_request}Handle" => handles.collect(&:to_hash)}})
+      entity_class_name_for_soap_request = entity_class.name.split("::").last
+      response = request(:get_data_array, "entityHandles" => {"#{entity_class_name_for_soap_request}Handle" => handles.collect(&:to_hash)})
       [response["#{entity_class.key}_data".intern]].flatten
     end
 
